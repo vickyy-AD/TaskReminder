@@ -1,50 +1,134 @@
-# Welcome to your Expo app 👋
+# Task Reminder Lite
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile task reminder app built with **React Native (Expo)** and **Supabase**. Users can sign up, log in, and manage personal tasks with local notifications and optional Telegram alerts.
 
-## Get started
+---
 
-1. Install dependencies
+## Tech Stack
 
-   ```bash
-   npm install
-   ```
+- **React Native** (Expo SDK 54)
+- **Expo Router** (file-based routing)
+- **TypeScript**
+- **Supabase** (Auth, PostgreSQL, RLS)
+- **Expo Notifications**
+- **Expo Secure Store** (session persistence)
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## Features
 
-In the output, you'll find options to open the app in a
+- **Auth** – Email/password signup & login with validation (valid email, min 6 chars)
+- **Tasks** – Create (title + optional description), toggle complete, delete with per-user isolation
+- **Notifications** – Local reminder when a task is added (2 min delay)
+- **Toast** – Success/error feedback for add, update, delete, login, signup
+- **Battery** – Optional Telegram alert when battery drops below 20% (foreground only)
+- **UI** – Warm brown theme, logout confirmation
+- **Session** – Persistent auth via Secure Store, splash redirects to home or login
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Prerequisites
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Node.js 18+
+- npm or yarn
+- Expo Go app (for device testing)
+- Supabase project
+- (Optional) Telegram bot for battery alerts
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## Environment Variables
 
-```bash
-npm run reset-project
+Create a `.env` file in the project root (copy from `.env.example` if present):
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional: for battery low Telegram alerts
+EXPO_PUBLIC_TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+EXPO_PUBLIC_TELEGRAM_CHAT_ID=your_telegram_chat_id
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## Database Schema
 
-To learn more about developing your project with Expo, look at the following resources:
+### `tasks` table
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Column      | Type      | Description               |
+| ----------- | --------- | ------------------------- |
+| id          | uuid      | Primary key               |
+| title       | text      | Task title                |
+| description | text      | Optional task description |
+| completed   | boolean   | Task status               |
+| user_id     | uuid      | Owner (auth.users.id)     |
+| created_at  | timestamp | Created time              |
 
-## Join the community
+To add the `description` column to an existing table, run in Supabase SQL editor:
 
-Join our community of developers creating universal apps.
+```sql
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description text;
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+RLS policies ensure users can only access their own tasks. `user_id` is set via `auth.uid()`.
+
+---
+
+## Project Structure
+
+```
+app/
+  _layout.tsx       # Root layout
+  index/            # Splash (auth check, redirect)
+  login/            # LoginScreen
+  signup/           # RegisterScreen
+  home/             # HomeScreen (task list)
+
+components/
+  AuthInput.tsx     # Reusable auth field with validation
+  TaskInput.tsx     # Add-task input
+  TaskItem.tsx      # Task row (checkbox, delete)
+  Toast.tsx         # Global toast notifications
+
+hooks/
+  useAuth.ts        # Login/signup logic
+  useTasks.ts       # Task CRUD, notifications, battery
+
+constants/
+  colors.ts         # Theme colors
+  routeConstants.ts # Route paths
+lib/
+  supabase.ts       # Supabase client
+  telegram.ts       # Telegram alert helper
+```
+
+---
+
+## How to Run
+
+```bash
+# Install dependencies
+npm install
+
+# Create .env with Supabase (and optionally Telegram) vars
+# Then start:
+npx expo start
+```
+
+Use `npx expo start --android` or `npx expo start --ios` for device/simulator.
+
+---
+
+## Notifications
+
+- Uses **Expo Notifications**
+- Android notification channel required
+- Reminder scheduled 2 minutes after a task is added
+- Permission requested on first load
+
+---
+
+## Battery & Telegram
+
+- Battery is checked **only while the app is in the foreground**
+- If level ≤ 20%, a Telegram message is sent (when env vars are set)
+- True background monitoring would need native services and is not included
