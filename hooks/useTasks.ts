@@ -5,6 +5,8 @@ import { Alert, Platform } from "react-native";
 import Toast from "../components/Toast";
 import { supabase } from "../lib/supabase";
 import { sendTelegramMessage } from "../lib/telegram";
+import { formatErrorMessage } from "@/utils/network";
+ 
 
 export type Task = {
   id: string;
@@ -87,7 +89,8 @@ export function useTasks() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      Alert.alert("Error", error.message);
+      const msg = formatErrorMessage(error.message, "Failed to load tasks");
+      Toast.show({ msg, bgColor: "red" });
     } else {
       setTasks(data || []);
     }
@@ -110,7 +113,8 @@ export function useTasks() {
     const { error } = await supabase.from("tasks").insert(payload);
 
     if (error) {
-      Alert.alert("Error", error.message);
+      const msg = formatNetworkAwareMessage(error.message, "Failed to add task");
+      Toast.show({ msg, bgColor: "red" });
       return false;
     }
 
@@ -130,19 +134,27 @@ export function useTasks() {
       .update({ completed: !completed })
       .eq("id", id);
 
-    if (!error) {
-      fetchTasks();
-      Toast.show({ msg: "Task completed successfully", bgColor: "green" });
+    if (error) {
+      const msg = formatNetworkAwareMessage(error.message, "Failed to update task");
+      Toast.show({ msg, bgColor: "red" });
+      return;
     }
+
+    fetchTasks();
+    Toast.show({ msg: "Task updated successfully", bgColor: "green" });
   };
 
   const deleteTask = async (id: string) => {
     const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (!error) {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      fetchTasks();
-      Toast.show({ msg: "Task deleted successfully", bgColor: "red" });
+    if (error) {
+      const msg = formatNetworkAwareMessage(error.message, "Failed to delete task");
+      Toast.show({ msg, bgColor: "red" });
+      return;
     }
+
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    fetchTasks();
+    Toast.show({ msg: "Task deleted successfully", bgColor: "red" });
   };
 
   const logout = async () => {

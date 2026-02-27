@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Toast from "../components/Toast";
 import { supabase } from "../lib/supabase";
+import { formatErrorMessage } from "@/utils/network";
 
 const emailRegex = /^\S+@\S+\.\S+$/;
 
@@ -60,7 +61,8 @@ export function useLoginForm(): AuthHookReturn {
     setLoading(false);
 
     if (error) {
-      Toast.show({ msg: error.message || "Login failed", bgColor: "red" });
+      const msg = formatErrorMessage(error.message, "Login failed");
+      Toast.show({ msg, bgColor: "red" });
       return false;
     }
 
@@ -135,7 +137,8 @@ export function useSignupForm(): AuthHookReturn {
     setLoading(false);
 
     if (error) {
-      Toast.show({ msg: error.message || "Signup failed", bgColor: "red" });
+      const msg = formatErrorMessage(error.message, "Signup failed");
+      Toast.show({ msg, bgColor: "red" });
       return false;
     }
 
