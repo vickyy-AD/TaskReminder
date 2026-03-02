@@ -3,6 +3,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import {
   Animated,
@@ -16,9 +17,10 @@ import {
 
 type Props = {
   onAdd: (title: string, description?: string, dueDate?: Date | null) => void;
+  theme?: any;
 };
 
-export default function TaskInput({ onAdd }: Props) {
+export default function TaskInputDark({ onAdd, theme }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
@@ -27,10 +29,22 @@ export default function TaskInput({ onAdd }: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const [scaleAnim] = useState(new Animated.Value(1));
 
+  // Theme defaults
+  const textPrimary = theme?.textPrimary || "#F0F4FF";
+  const textSecondary = theme?.textSecondary || "#A8B4D4";
+  const textTertiary = theme?.textTertiary || "#6B7491";
+  const surface = theme?.surface || "#1A1F3A";
+  const surfaceLight = theme?.surfaceLight || "#242B4A";
+  const surfaceBright = theme?.surfaceBright || "#2F3654";
+  const accentGradient = theme?.accentGradient || ["#00D4FF", "#0099FF"];
+  const infoGlow = theme?.infoGlow || "rgba(59, 130, 246, 0.2)";
+  const info = theme?.info || "#3B82F6";
+  const error = theme?.error || "#EF4444";
+
   const handleAdd = () => {
     if (!title.trim()) {
       if (description.trim() || dueDate) {
-        Toast.show({ msg: "Add a title to create a task", bgColor: "red" });
+        Toast.show({ msg: "Add a title to create a task", bgColor: error });
       }
       return;
     }
@@ -122,104 +136,139 @@ export default function TaskInput({ onAdd }: Props) {
         },
       ]}
     >
-      <BlurView intensity={85} tint="light" style={styles.blurCard}>
-        {/* Gradient accent top */}
-        <View style={styles.accentBar} />
+      <LinearGradient
+        colors={[surfaceLight, surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.linearGradientBg}
+      >
+        <BlurView intensity={50} tint="dark" style={styles.blurCard}>
+          {/* Gradient accent bar at top */}
+          <LinearGradient colors={accentGradient} style={styles.accentBar} />
 
-        {/* Title row with enhanced icon */}
-        <View style={styles.titleRow}>
-          <View style={[styles.leadIcon, hasContent && styles.leadIconActive]}>
-            <Text
-              style={[
-                styles.leadIconText,
-                hasContent && styles.leadIconTextActive,
-              ]}
+          {/* Title row with enhanced icon */}
+          <View style={styles.titleRow}>
+            <View
+              style={[styles.leadIcon, hasContent && styles.leadIconActive]}
             >
-              {hasContent ? "✓" : "+"}
-            </Text>
-          </View>
-          <TextInput
-            placeholder="What needs to be done?"
-            placeholderTextColor={PLACEHOLDER}
-            value={title}
-            onChangeText={setTitle}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            style={styles.titleInput}
-            returnKeyType="next"
-          />
-        </View>
-
-        {/* Description with subtle background */}
-        {(isFocused || description) && (
-          <View style={styles.descriptionContainer}>
+              {hasContent && (
+                <LinearGradient
+                  colors={accentGradient}
+                  style={styles.iconGradientBg}
+                >
+                  <Text style={styles.leadIconText}>✓</Text>
+                </LinearGradient>
+              )}
+              {!hasContent && <Text style={styles.leadIconText}>+</Text>}
+            </View>
             <TextInput
-              placeholder="Add details or notes…"
-              placeholderTextColor={PLACEHOLDER_SOFT}
-              value={description}
-              onChangeText={setDescription}
-              style={styles.descInput}
-              multiline
-              numberOfLines={2}
-              returnKeyType="done"
-              onSubmitEditing={handleAdd}
+              placeholder="What needs to be done?"
+              placeholderTextColor={textTertiary}
+              value={title}
+              onChangeText={setTitle}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={[styles.titleInput, { color: textPrimary }]}
+              returnKeyType="next"
             />
           </View>
-        )}
 
-        {/* Enhanced separator */}
-        <View style={styles.separator} />
-
-        {/* Action row with better spacing */}
-        <View style={styles.actionRow}>
-          {/* Date chip - premium style */}
-          <Pressable
-            onPress={openDatePicker}
-            style={({ pressed }) => [
-              styles.dateChip,
-              dueDate && styles.dateChipSet,
-              pressed && styles.chipPressed,
-            ]}
-          >
-            <Text style={styles.dateChipEmoji}>
-              {dueDate ? "📅" : "🕐"}
-            </Text>
-            <Text
-              style={[styles.dateChipText, dueDate && styles.dateChipTextSet]}
-            >
-              {dueDate ? formatDueDate(dueDate) : "Set due date"}
-            </Text>
-          </Pressable>
-
-          {/* Clear date button */}
-          {dueDate && (
-            <Pressable
-              onPress={() => setDueDate(null)}
-              hitSlop={10}
-              style={({ pressed }) => [
-                styles.clearBtn,
-                pressed && styles.clearBtnPressed,
+          {/* Description with subtle background */}
+          {(isFocused || description) && (
+            <View
+              style={[
+                styles.descriptionContainer,
+                { backgroundColor: surfaceBright + "40" },
               ]}
             >
-              <Text style={styles.clearBtnText}>✕</Text>
-            </Pressable>
+              <TextInput
+                placeholder="Add details or notes…"
+                placeholderTextColor={textTertiary}
+                value={description}
+                onChangeText={setDescription}
+                style={[styles.descInput, { color: textSecondary }]}
+                multiline
+                numberOfLines={2}
+                returnKeyType="done"
+                onSubmitEditing={handleAdd}
+              />
+            </View>
           )}
 
-          <View style={{ flex: 1 }} />
+          {/* Enhanced separator */}
+          <View
+            style={[styles.separator, { backgroundColor: surfaceBright }]}
+          />
 
-          {/* Premium add button */}
-          <Pressable
-            onPress={handleAdd}
-            style={({ pressed }) => [
-              styles.addFab,
-              pressed && styles.addFabPressed,
-              hasContent && styles.addFabActive,
-            ]}
-          >
-            <Text style={styles.addFabText}>+</Text>
-          </Pressable>
-        </View>
-      </BlurView>
+          {/* Action row with better spacing */}
+          <View style={styles.actionRow}>
+            {/* Date chip - premium style with gradient */}
+            <LinearGradient
+              colors={
+                dueDate ? [info + "25", info + "10"] : [surfaceBright, surface]
+              }
+              style={styles.dateChipGradient}
+            >
+              <Pressable
+                onPress={openDatePicker}
+                style={({ pressed }) => [
+                  styles.dateChip,
+                  pressed && styles.chipPressed,
+                ]}
+              >
+                <Text style={styles.dateChipEmoji}>
+                  {dueDate ? "📅" : "🕐"}
+                </Text>
+                <Text
+                  style={[
+                    styles.dateChipText,
+                    { color: dueDate ? info : textSecondary },
+                    dueDate && styles.dateChipTextSet,
+                  ]}
+                >
+                  {dueDate ? formatDueDate(dueDate) : "Set due date"}
+                </Text>
+              </Pressable>
+            </LinearGradient>
+
+            {/* Clear date button */}
+            {dueDate && (
+              <Pressable
+                onPress={() => setDueDate(null)}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  styles.clearBtn,
+                  pressed && styles.clearBtnPressed,
+                ]}
+              >
+                <Text style={[styles.clearBtnText, { color: error }]}>✕</Text>
+              </Pressable>
+            )}
+
+            <View style={{ flex: 1 }} />
+
+            {/* Premium add button with gradient */}
+            <Pressable
+              onPress={handleAdd}
+              style={({ pressed }) => [
+                styles.addFab,
+                pressed && styles.chipPressed,
+              ]}
+            >
+              <LinearGradient
+                colors={
+                  hasContent ? accentGradient : [surfaceBright, surfaceLight]
+                }
+                style={styles.fabGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.addFabText}>+</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </BlurView>
+      </LinearGradient>
 
       {/* Date / time picker */}
       {showPicker && (
@@ -235,49 +284,41 @@ export default function TaskInput({ onAdd }: Props) {
   );
 }
 
-// ─── Design tokens ─────────────────────────────────────────────────
-const RADIUS = 20;
-const GLASS_BG = "rgba(255,255,255,0.96)";
-const GLASS_BORDER = "rgba(0,0,0,0.06)";
-const SEPARATOR = "rgba(0,0,0,0.08)";
-const PLACEHOLDER = "rgba(0,0,0,0.35)";
-const PLACEHOLDER_SOFT = "rgba(0,0,0,0.25)";
-const BLUE = "#0084FF";
-const BLUE_SOFT = "rgba(0,132,255,0.12)";
-const ACCENT = "#FF6B6B";
-
+// ─── Styles ───────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   wrapper: {
     marginBottom: 24,
     marginHorizontal: 2,
   },
 
-  blurCard: {
-    borderRadius: RADIUS,
+  linearGradientBg: {
+    borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: GLASS_BG,
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+
+  blurCard: {
+    borderRadius: 20,
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: GLASS_BORDER,
+    borderColor: "rgba(255, 255, 255, 0.1)",
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
   },
 
-  // Gradient accent bar at top
   accentBar: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: BLUE,
-    borderTopLeftRadius: RADIUS,
-    borderTopRightRadius: RADIUS,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 
   titleRow: {
@@ -292,35 +333,35 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: PLACEHOLDER,
+    borderColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "rgba(255,255,255,0.05)",
   },
 
   leadIconActive: {
-    borderStyle: "solid",
-    borderColor: BLUE,
-    backgroundColor: BLUE_SOFT,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+
+  iconGradientBg: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 50,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   leadIconText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: PLACEHOLDER,
-  },
-
-  leadIconTextActive: {
-    color: BLUE,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 
   titleInput: {
     flex: 1,
     fontSize: 16,
     fontWeight: "600",
-    color: "#0D0D0D",
     paddingVertical: 4,
     letterSpacing: -0.3,
   },
@@ -330,21 +371,18 @@ const styles = StyleSheet.create({
     marginLeft: 40,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "rgba(0,0,0,0.03)",
     borderRadius: 12,
   },
 
   descInput: {
     fontSize: 14,
     fontWeight: "400",
-    color: "rgba(0,0,0,0.65)",
     lineHeight: 20,
     paddingVertical: 0,
   },
 
   separator: {
     height: 1,
-    backgroundColor: SEPARATOR,
     marginVertical: 12,
   },
 
@@ -354,22 +392,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
+  dateChipGradient: {
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+
   dateChip: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderWidth: 1,
-    borderColor: SEPARATOR,
     gap: 6,
-  },
-
-  dateChipSet: {
-    backgroundColor: BLUE_SOFT,
-    borderColor: BLUE,
-    borderWidth: 1.2,
   },
 
   dateChipEmoji: {
@@ -379,11 +414,9 @@ const styles = StyleSheet.create({
   dateChipText: {
     fontSize: 13,
     fontWeight: "500",
-    color: "rgba(0,0,0,0.5)",
   },
 
   dateChipTextSet: {
-    color: BLUE,
     fontWeight: "600",
   },
 
@@ -396,12 +429,11 @@ const styles = StyleSheet.create({
   },
 
   clearBtnPressed: {
-    backgroundColor: "rgba(255,59,48,0.1)",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
   },
 
   clearBtnText: {
     fontSize: 16,
-    color: "#FF3B30",
     fontWeight: "600",
   },
 
@@ -409,25 +441,19 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: SEPARATOR,
-  },
-
-  addFabActive: {
-    backgroundColor: BLUE,
-    borderColor: BLUE,
-    shadowColor: BLUE,
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
 
-  addFabPressed: {
-    transform: [{ scale: 0.92 }],
+  fabGradient: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   addFabText: {

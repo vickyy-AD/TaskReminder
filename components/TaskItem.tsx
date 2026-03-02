@@ -1,5 +1,6 @@
 import { BlurView } from "expo-blur";
-import { useRef } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
 type Props = {
@@ -9,18 +10,33 @@ type Props = {
   completed: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  theme?: any;
 };
 
-export default function TaskItem({
+export default function TaskItemDark({
   title,
   description,
   dueDate,
   completed,
   onToggle,
   onDelete,
+  theme,
 }: Props) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
+  const checkAnim = useRef(new Animated.Value(0)).current;
+
+  // Trigger checkmark animation when task completes
+  useEffect(() => {
+    if (completed) {
+      Animated.spring(checkAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      checkAnim.setValue(0);
+    }
+  }, [completed, checkAnim]);
 
   const formatDueDate = (iso: string) => {
     const date = new Date(iso);
@@ -73,6 +89,26 @@ export default function TaskItem({
     });
   };
 
+  // Determine colors based on theme
+  const textPrimary = theme?.textPrimary || "#F0F4FF";
+  const textSecondary = theme?.textSecondary || "#A8B4D4";
+  const textTertiary = theme?.textTertiary || "#6B7491";
+  const surfaceLight = theme?.surfaceLight || "#242B4A";
+  const surfaceBright = theme?.surfaceBright || "#2F3654";
+  const success = theme?.success || "#10B981";
+  const warning = theme?.warning || "#F59E0B";
+  const error = theme?.error || "#EF4444";
+  const successGlow = theme?.successGlow || "rgba(16, 185, 129, 0.2)";
+  const warningGlow = theme?.warningGlow || "rgba(245, 158, 11, 0.2)";
+  const errorGlow = theme?.errorGlow || "rgba(239, 68, 68, 0.2)";
+
+  const accentBarColor = isOverdue ? error : isToday ? warning : "#3B82F6";
+  const accentGlow = isOverdue
+    ? errorGlow
+    : isToday
+      ? warningGlow
+      : successGlow;
+
   return (
     <Animated.View
       style={[
@@ -83,147 +119,197 @@ export default function TaskItem({
         },
       ]}
     >
-      <BlurView intensity={70} tint="light" style={styles.blurContainer}>
-        {/* Overdue accent bar */}
-        {isOverdue && <View style={styles.overdueBar} />}
-        {isToday && <View style={styles.todayBar} />}
+      <LinearGradient
+        colors={[surfaceLight, surfaceBright]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.linearGradient}
+      >
+        <BlurView intensity={50} tint="dark" style={styles.blurContainer}>
+          {/* Accent bar with glow */}
+          <LinearGradient
+            colors={[accentBarColor, accentBarColor + "80"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={[styles.accentBar, { backgroundColor: accentBarColor }]}
+          />
 
-        <View style={styles.innerRow}>
-          {/* Enhanced checkbox */}
-          <Pressable
-            onPress={onToggle}
-            hitSlop={12}
-            style={({ pressed }) => [
-              styles.checkbox,
-              completed && styles.checkboxCompleted,
-              pressed && styles.checkboxPressed,
-            ]}
-          >
-            {completed && (
-              <View style={styles.checkmarkWrap}>
-                <Text style={styles.checkmarkText}>✓</Text>
-              </View>
-            )}
-          </Pressable>
+          <View style={[styles.accentGlow, { backgroundColor: accentGlow }]} />
 
-          {/* Text content */}
-          <View style={styles.textBlock}>
-            <Text
-              numberOfLines={2}
-              style={[styles.title, completed && styles.titleCompleted]}
+          <View style={styles.innerRow}>
+            {/* Enhanced checkbox with gradient */}
+            <Pressable
+              onPress={onToggle}
+              hitSlop={12}
+              style={({ pressed }) => [
+                styles.checkbox,
+                completed && styles.checkboxCompleted,
+                pressed && styles.checkboxPressed,
+              ]}
             >
-              {title}
-            </Text>
+              {completed && (
+                <LinearGradient
+                  colors={[success, "#059669"]}
+                  style={styles.checkmarkGradient}
+                >
+                  <Animated.Text
+                    style={[
+                      styles.checkmarkText,
+                      {
+                        transform: [
+                          {
+                            scale: checkAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.5, 1],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    ✓
+                  </Animated.Text>
+                </LinearGradient>
+              )}
+            </Pressable>
 
-            {!!description && (
+            {/* Text content */}
+            <View style={styles.textBlock}>
               <Text
                 numberOfLines={2}
-                style={[styles.description, completed && styles.textCompleted]}
-              >
-                {description}
-              </Text>
-            )}
-
-            {/* Enhanced date chip */}
-            {!!dueDate && (
-              <View
                 style={[
-                  styles.dateChip,
-                  isOverdue
-                    ? styles.dateChipOverdue
-                    : isToday
-                      ? styles.dateChipToday
-                      : styles.dateChipNormal,
+                  styles.title,
+                  { color: textPrimary },
+                  completed && styles.titleCompleted,
                 ]}
               >
-                <Text style={styles.dateChipEmoji}>
-                  {isOverdue ? "⚠️" : isToday ? "🔔" : "⏱️"}
-                </Text>
+                {title}
+              </Text>
+
+              {!!description && (
                 <Text
+                  numberOfLines={2}
                   style={[
-                    styles.dateChipText,
-                    isOverdue
-                      ? styles.dateChipTextOverdue
-                      : isToday
-                        ? styles.dateChipTextToday
-                        : styles.dateChipTextNormal,
+                    styles.description,
+                    { color: textSecondary },
+                    completed && styles.textCompleted,
                   ]}
                 >
-                  {formatDueDate(dueDate)}
+                  {description}
                 </Text>
-              </View>
-            )}
-          </View>
+              )}
 
-          {/* Delete button */}
-          <Pressable
-            onPress={handleDelete}
-            hitSlop={14}
-            style={({ pressed }) => [
-              styles.deleteBtn,
-              pressed && styles.deleteBtnPressed,
-            ]}
-          >
-            <Text style={styles.deleteIcon}>✕</Text>
-          </Pressable>
-        </View>
-      </BlurView>
+              {/* Enhanced date chip */}
+              {!!dueDate && (
+                <LinearGradient
+                  colors={
+                    isOverdue
+                      ? [error + "20", error + "05"]
+                      : isToday
+                        ? [warning + "20", warning + "05"]
+                        : ["#3B82F6" + "20", "#3B82F6" + "05"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[
+                    styles.dateChip,
+                    {
+                      borderColor: isOverdue
+                        ? error
+                        : isToday
+                          ? warning
+                          : "#3B82F6",
+                    },
+                  ]}
+                >
+                  <Text style={styles.dateChipEmoji}>
+                    {isOverdue ? "⚠️" : isToday ? "🔔" : "⏱️"}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dateChipText,
+                      {
+                        color: isOverdue
+                          ? error
+                          : isToday
+                            ? warning
+                            : "#3B82F6",
+                      },
+                    ]}
+                  >
+                    {formatDueDate(dueDate)}
+                  </Text>
+                </LinearGradient>
+              )}
+            </View>
+
+            {/* Delete button with hover effect */}
+            <Pressable
+              onPress={handleDelete}
+              hitSlop={14}
+              style={({ pressed }) => [
+                styles.deleteBtn,
+                pressed && styles.deleteBtnPressed,
+              ]}
+            >
+              <LinearGradient
+                colors={[error + "20", error + "05"]}
+                style={styles.deleteBtnGradient}
+              >
+                <Text style={[styles.deleteIcon, { color: error }]}>✕</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </BlurView>
+      </LinearGradient>
     </Animated.View>
   );
 }
 
-// ─── Design tokens ────────────────────────────────────────────────
-const RADIUS = 18;
-const GLASS_BG = "rgba(255, 255, 255, 0.96)";
-const GLASS_BORDER = "rgba(0, 0, 0, 0.06)";
-const SEPARATOR = "rgba(0, 0, 0, 0.08)";
-
-const BLUE = "#0084FF";
-const RED = "#FF3B30";
-const RED_SOFT = "rgba(255, 59, 48, 0.12)";
-const BLUE_SOFT = "rgba(0, 132, 255, 0.12)";
-const ORANGE = "#FF9500";
-const ORANGE_SOFT = "rgba(255, 149, 0, 0.12)";
-const GREEN = "#34C759";
-const MUTED = "rgba(0, 0, 0, 0.4)";
-const MUTED_TEXT = "rgba(0, 0, 0, 0.55)";
-
+// ─── Styles ───────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   cardWrapper: {
     marginBottom: 12,
-    borderRadius: RADIUS,
+    borderRadius: 18,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    elevation: 5,
     marginHorizontal: 2,
   },
 
-  blurContainer: {
-    borderRadius: RADIUS,
+  linearGradient: {
+    borderRadius: 18,
     overflow: "hidden",
-    backgroundColor: GLASS_BG,
     borderWidth: 1,
-    borderColor: GLASS_BORDER,
+    borderColor: "rgba(255,255,255,0.08)",
   },
 
-  overdueBar: {
+  blurContainer: {
+    borderRadius: 18,
+    overflow: "hidden",
+  },
+
+  accentBar: {
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
     width: 3,
-    backgroundColor: RED,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
   },
 
-  todayBar: {
+  accentGlow: {
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
-    width: 3,
-    backgroundColor: ORANGE,
+    width: 20,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+    opacity: 0.3,
   },
 
   innerRow: {
@@ -234,23 +320,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
-  // ─── Checkbox ──────────────────────────────────────
+  // ─── Checkbox with Gradient ──────────────────────────────────
   checkbox: {
     width: 28,
     height: 28,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: SEPARATOR,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    borderColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
 
   checkboxCompleted: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-    shadowColor: GREEN,
+    borderColor: "rgba(255,255,255,0.2)",
+    shadowColor: "#10B981",
     shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -261,7 +346,10 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.88 }],
   },
 
-  checkmarkWrap: {
+  checkmarkGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -273,7 +361,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 
-  // ─── Text block ────────────────────────────────────
+  // ─── Text block ────────────────────────────────────────────────
   textBlock: {
     flex: 1,
     gap: 5,
@@ -282,30 +370,28 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#0D0D0D",
     letterSpacing: -0.2,
     lineHeight: 20,
   },
 
   titleCompleted: {
     textDecorationLine: "line-through",
-    color: MUTED,
+    opacity: 0.5,
     fontWeight: "400",
   },
 
   description: {
     fontSize: 13,
-    color: MUTED_TEXT,
     lineHeight: 18,
     fontWeight: "400",
   },
 
   textCompleted: {
     textDecorationLine: "line-through",
-    color: MUTED,
+    opacity: 0.4,
   },
 
-  // ─── Date chip ─────────────────────────────────────
+  // ─── Date chip ─────────────────────────────────────────────────
   dateChip: {
     alignSelf: "flex-start",
     borderRadius: 10,
@@ -315,18 +401,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-  },
-
-  dateChipNormal: {
-    backgroundColor: BLUE_SOFT,
-  },
-
-  dateChipToday: {
-    backgroundColor: ORANGE_SOFT,
-  },
-
-  dateChipOverdue: {
-    backgroundColor: RED_SOFT,
+    borderWidth: 1,
   },
 
   dateChipEmoji: {
@@ -339,37 +414,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.05,
   },
 
-  dateChipTextNormal: {
-    color: BLUE,
-  },
-
-  dateChipTextToday: {
-    color: ORANGE,
-  },
-
-  dateChipTextOverdue: {
-    color: RED,
-  },
-
-  // ─── Delete button ─────────────────────────────────
+  // ─── Delete button ─────────────────────────────────────────────
   deleteBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255, 59, 48, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
 
+  deleteBtnGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   deleteBtnPressed: {
-    backgroundColor: "rgba(255, 59, 48, 0.18)",
     transform: [{ scale: 0.92 }],
   },
 
   deleteIcon: {
     fontSize: 14,
-    color: RED,
     fontWeight: "600",
   },
 });
