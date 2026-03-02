@@ -1,19 +1,47 @@
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import {
+  Animated,
+  ColorValue,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-type Props = {
+// ─── TYPE DEFINITIONS ─────────────────────────────────────────────────
+type ThemeType = {
+  background: string;
+  surface: string;
+  surfaceLight: string;
+  surfaceBright: string;
+  accentGradient: [string, string];
+  accentGradient2: [string, string];
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+  successGlow: string;
+  warningGlow: string;
+  errorGlow: string;
+  infoGlow: string;
+};
+
+interface TaskItemPremiumProps {
   title: string;
   description?: string | null;
   dueDate?: string | null;
   completed: boolean;
   onToggle: () => void;
   onDelete: () => void;
-  theme?: any;
-};
+  theme: ThemeType;
+}
 
-export default function TaskItemDark({
+export default function TaskItemPremium({
   title,
   description,
   dueDate,
@@ -21,22 +49,43 @@ export default function TaskItemDark({
   onToggle,
   onDelete,
   theme,
-}: Props) {
+}: TaskItemPremiumProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const checkAnim = useRef(new Animated.Value(0)).current;
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
-  // Trigger checkmark animation when task completes
+  // Trigger animations on completion
   useEffect(() => {
     if (completed) {
-      Animated.spring(checkAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.spring(checkAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 40,
+        }),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(shimmerAnim, {
+              toValue: 1,
+              duration: 1500,
+              useNativeDriver: false,
+            }),
+            Animated.timing(shimmerAnim, {
+              toValue: 0,
+              duration: 1500,
+              useNativeDriver: false,
+            }),
+          ]),
+        ),
+      ]).start();
     } else {
       checkAnim.setValue(0);
+      shimmerAnim.setValue(0);
     }
-  }, [completed, checkAnim]);
+  }, [completed, checkAnim, shimmerAnim]);
 
   const formatDueDate = (iso: string) => {
     const date = new Date(iso);
@@ -75,13 +124,13 @@ export default function TaskItemDark({
   const handleDelete = () => {
     Animated.parallel([
       Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 200,
+        toValue: 0.92,
+        duration: 250,
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 0,
-        duration: 200,
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -89,25 +138,26 @@ export default function TaskItemDark({
     });
   };
 
-  // Determine colors based on theme
-  const textPrimary = theme?.textPrimary || "#F0F4FF";
-  const textSecondary = theme?.textSecondary || "#A8B4D4";
-  const textTertiary = theme?.textTertiary || "#6B7491";
-  const surfaceLight = theme?.surfaceLight || "#242B4A";
-  const surfaceBright = theme?.surfaceBright || "#2F3654";
-  const success = theme?.success || "#10B981";
-  const warning = theme?.warning || "#F59E0B";
-  const error = theme?.error || "#EF4444";
-  const successGlow = theme?.successGlow || "rgba(16, 185, 129, 0.2)";
-  const warningGlow = theme?.warningGlow || "rgba(245, 158, 11, 0.2)";
-  const errorGlow = theme?.errorGlow || "rgba(239, 68, 68, 0.2)";
-
-  const accentBarColor = isOverdue ? error : isToday ? warning : "#3B82F6";
-  const accentGlow = isOverdue
-    ? errorGlow
+  const accentBarColor = isOverdue
+    ? theme.error
     : isToday
-      ? warningGlow
-      : successGlow;
+      ? theme.warning
+      : theme.info;
+  const accentGlow = isOverdue
+    ? theme.errorGlow
+    : isToday
+      ? theme.warningGlow
+      : theme.infoGlow;
+
+  const successGradient: [ColorValue, ColorValue] = [
+    theme.success as ColorValue,
+    "#059669" as ColorValue,
+  ];
+
+  const surfaceGradient: [ColorValue, ColorValue] = [
+    theme.surfaceLight as ColorValue,
+    theme.surfaceBright as ColorValue,
+  ];
 
   return (
     <Animated.View
@@ -120,27 +170,56 @@ export default function TaskItemDark({
       ]}
     >
       <LinearGradient
-        colors={[surfaceLight, surfaceBright]}
+        colors={surfaceGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.linearGradient}
       >
-        <BlurView intensity={50} tint="dark" style={styles.blurContainer}>
-          {/* Accent bar with glow */}
-          <LinearGradient
-            colors={[accentBarColor, accentBarColor + "80"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={[styles.accentBar, { backgroundColor: accentBarColor }]}
+        <BlurView intensity={60} tint="dark" style={styles.blurContainer}>
+          {/* Premium accent bar with glow */}
+          <View
+            style={[
+              styles.accentBar,
+              {
+                backgroundColor: accentBarColor,
+              },
+            ]}
           />
 
-          <View style={[styles.accentGlow, { backgroundColor: accentGlow }]} />
+          {/* Accent glow effect */}
+          <Animated.View
+            style={[
+              styles.accentGlow,
+              {
+                backgroundColor: accentGlow,
+                opacity: glowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.3, 0.8],
+                }),
+              },
+            ]}
+          />
+
+          {/* Shimmer effect on completion */}
+          {completed && (
+            <Animated.View
+              style={[
+                styles.shimmerEffect,
+                {
+                  opacity: shimmerAnim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 0.4, 0],
+                  }),
+                },
+              ]}
+            />
+          )}
 
           <View style={styles.innerRow}>
-            {/* Enhanced checkbox with gradient */}
+            {/* Enhanced checkbox with glow */}
             <Pressable
               onPress={onToggle}
-              hitSlop={12}
+              hitSlop={14}
               style={({ pressed }) => [
                 styles.checkbox,
                 completed && styles.checkboxCompleted,
@@ -149,9 +228,12 @@ export default function TaskItemDark({
             >
               {completed && (
                 <LinearGradient
-                  colors={[success, "#059669"]}
+                  colors={successGradient}
                   style={styles.checkmarkGradient}
                 >
+                  {/* Checkmark glow */}
+                  <View style={styles.checkGlow} />
+
                   <Animated.Text
                     style={[
                       styles.checkmarkText,
@@ -160,7 +242,7 @@ export default function TaskItemDark({
                           {
                             scale: checkAnim.interpolate({
                               inputRange: [0, 1],
-                              outputRange: [0.5, 1],
+                              outputRange: [0.3, 1],
                             }),
                           },
                         ],
@@ -179,7 +261,7 @@ export default function TaskItemDark({
                 numberOfLines={2}
                 style={[
                   styles.title,
-                  { color: textPrimary },
+                  { color: theme.textPrimary },
                   completed && styles.titleCompleted,
                 ]}
               >
@@ -191,7 +273,7 @@ export default function TaskItemDark({
                   numberOfLines={2}
                   style={[
                     styles.description,
-                    { color: textSecondary },
+                    { color: theme.textSecondary },
                     completed && styles.textCompleted,
                   ]}
                 >
@@ -204,10 +286,19 @@ export default function TaskItemDark({
                 <LinearGradient
                   colors={
                     isOverdue
-                      ? [error + "20", error + "05"]
+                      ? [
+                          (theme.error + "25") as string,
+                          (theme.error + "10") as string,
+                        ]
                       : isToday
-                        ? [warning + "20", warning + "05"]
-                        : ["#3B82F6" + "20", "#3B82F6" + "05"]
+                        ? [
+                            (theme.warning + "25") as string,
+                            (theme.warning + "10") as string,
+                          ]
+                        : [
+                            (theme.info + "25") as string,
+                            (theme.info + "10") as string,
+                          ]
                   }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -215,10 +306,10 @@ export default function TaskItemDark({
                     styles.dateChip,
                     {
                       borderColor: isOverdue
-                        ? error
+                        ? theme.error
                         : isToday
-                          ? warning
-                          : "#3B82F6",
+                          ? theme.warning
+                          : theme.info,
                     },
                   ]}
                 >
@@ -230,10 +321,10 @@ export default function TaskItemDark({
                       styles.dateChipText,
                       {
                         color: isOverdue
-                          ? error
+                          ? theme.error
                           : isToday
-                            ? warning
-                            : "#3B82F6",
+                            ? theme.warning
+                            : theme.info,
                       },
                     ]}
                   >
@@ -243,20 +334,25 @@ export default function TaskItemDark({
               )}
             </View>
 
-            {/* Delete button with hover effect */}
+            {/* Delete button with glow */}
             <Pressable
               onPress={handleDelete}
-              hitSlop={14}
+              hitSlop={16}
               style={({ pressed }) => [
                 styles.deleteBtn,
                 pressed && styles.deleteBtnPressed,
               ]}
             >
               <LinearGradient
-                colors={[error + "20", error + "05"]}
+                colors={[
+                  (theme.error + "25") as ColorValue,
+                  (theme.error + "08") as ColorValue,
+                ]}
                 style={styles.deleteBtnGradient}
               >
-                <Text style={[styles.deleteIcon, { color: error }]}>✕</Text>
+                <Text style={[styles.deleteIcon, { color: theme.error }]}>
+                  ✕
+                </Text>
               </LinearGradient>
             </Pressable>
           </View>
@@ -266,28 +362,28 @@ export default function TaskItemDark({
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────
+// ─── STYLES ───────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   cardWrapper: {
-    marginBottom: 12,
-    borderRadius: 18,
+    marginBottom: 14,
+    borderRadius: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 5,
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
     marginHorizontal: 2,
   },
 
   linearGradient: {
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
 
   blurContainer: {
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: "hidden",
   },
 
@@ -296,9 +392,9 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 3,
-    borderTopLeftRadius: 18,
-    borderBottomLeftRadius: 18,
+    width: 3.5,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
   },
 
   accentGlow: {
@@ -306,138 +402,159 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 20,
-    borderTopLeftRadius: 18,
-    borderBottomLeftRadius: 18,
-    opacity: 0.3,
+    width: 24,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+
+  shimmerEffect: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "100%",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
 
   innerRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 14,
   },
 
-  // ─── Checkbox with Gradient ──────────────────────────────────
+  // ─── Checkbox ──────────────────────────────────────
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2.5,
     borderColor: "rgba(255,255,255,0.15)",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
 
   checkboxCompleted: {
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: "rgba(255,255,255,0.3)",
     shadowColor: "#10B981",
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
 
   checkboxPressed: {
-    transform: [{ scale: 0.88 }],
+    transform: [{ scale: 0.84 }],
   },
 
   checkmarkGradient: {
     width: "100%",
     height: "100%",
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  checkmarkText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
-    lineHeight: 16,
+  checkGlow: {
+    position: "absolute",
+    width: "120%",
+    height: "120%",
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.3)",
   },
 
-  // ─── Text block ────────────────────────────────────────────────
+  checkmarkText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "800",
+    lineHeight: 20,
+    zIndex: 1,
+  },
+
+  // ─── Text block ────────────────────────────────────
   textBlock: {
     flex: 1,
-    gap: 5,
+    gap: 6,
   },
 
   title: {
-    fontSize: 15,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-    lineHeight: 20,
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+    lineHeight: 22,
   },
 
   titleCompleted: {
     textDecorationLine: "line-through",
-    opacity: 0.5,
+    opacity: 0.45,
     fontWeight: "400",
   },
 
   description: {
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
     fontWeight: "400",
   },
 
   textCompleted: {
     textDecorationLine: "line-through",
-    opacity: 0.4,
+    opacity: 0.35,
   },
 
-  // ─── Date chip ─────────────────────────────────────────────────
+  // ─── Date chip ─────────────────────────────────────
   dateChip: {
     alignSelf: "flex-start",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginTop: 3,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    marginTop: 4,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    borderWidth: 1,
+    gap: 6,
+    borderWidth: 1.5,
   },
 
   dateChipEmoji: {
-    fontSize: 12,
+    fontSize: 13,
   },
 
   dateChipText: {
     fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.05,
+    fontWeight: "700",
+    letterSpacing: 0.1,
   },
 
-  // ─── Delete button ─────────────────────────────────────────────
+  // ─── Delete button ─────────────────────────────────
   deleteBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
     flexShrink: 0,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 
   deleteBtnGradient: {
     width: "100%",
     height: "100%",
-    borderRadius: 16,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
 
   deleteBtnPressed: {
-    transform: [{ scale: 0.92 }],
+    transform: [{ scale: 0.88 }],
   },
 
   deleteIcon: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

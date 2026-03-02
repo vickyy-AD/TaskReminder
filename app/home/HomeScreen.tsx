@@ -1,6 +1,3 @@
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -9,21 +6,23 @@ import {
   Alert,
   Animated,
   ColorValue,
-  Platform,
+  Dimensions,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import TaskInputUltimatePremium from "@/components/TaskInput";
 import TaskItem from "@/components/TaskItem";
 import Toast from "@/components/Toast";
 import { ROUTES } from "@/constants/routeConstants";
 import { Task, useTasks } from "@/hooks/useTasks";
 
-// ─── TYPE DEFINITIONS ─────────────────────────────────────────────────
+const { width } = Dimensions.get("window");
+
+// ─── ULTRA PREMIUM THEME ──────────────────────────────────────────────
 type ThemeType = {
   background: string;
   surface: string;
@@ -35,118 +34,164 @@ type ThemeType = {
   textSecondary: string;
   textTertiary: string;
   success: string;
-  successGlow: string;
   warning: string;
-  warningGlow: string;
   error: string;
-  errorGlow: string;
   info: string;
+  successGlow: string;
+  warningGlow: string;
+  errorGlow: string;
   infoGlow: string;
 };
 
-// ─── THEME 1: MIDNIGHT AURORA (Professional) ──────────────────────────
+// ─── PREMIUM AURORA ───────────────────────────────────────────────────
 const THEME_AURORA: ThemeType = {
-  background: "#0A0E27",
-  surface: "#1A1F3A",
-  surfaceLight: "#242B4A",
-  surfaceBright: "#2F3654",
-  accentGradient: ["#00D4FF", "#0099FF"],
+  background: "#050810",
+  surface: "#0F1627",
+  surfaceLight: "#1A2236",
+  surfaceBright: "#253346",
+  accentGradient: ["#00E5FF", "#0084FF"],
   accentGradient2: ["#7C3AED", "#5B21B6"],
-  textPrimary: "#F0F4FF",
-  textSecondary: "#A8B4D4",
-  textTertiary: "#6B7491",
+  textPrimary: "#F8FBFF",
+  textSecondary: "#B0C4DE",
+  textTertiary: "#7B8FA3",
   success: "#10B981",
-  successGlow: "rgba(16, 185, 129, 0.2)",
   warning: "#F59E0B",
-  warningGlow: "rgba(245, 158, 11, 0.2)",
   error: "#EF4444",
-  errorGlow: "rgba(239, 68, 68, 0.2)",
   info: "#3B82F6",
-  infoGlow: "rgba(59, 130, 246, 0.2)",
+  successGlow: "rgba(16, 185, 129, 0.25)",
+  warningGlow: "rgba(245, 158, 11, 0.25)",
+  errorGlow: "rgba(239, 68, 68, 0.25)",
+  infoGlow: "rgba(59, 130, 246, 0.25)",
 };
 
-// ─── THEME 2: MIDNIGHT OBSIDIAN (Luxury) ─────────────────────────────
+// ─── PREMIUM OBSIDIAN ─────────────────────────────────────────────────
 const THEME_OBSIDIAN: ThemeType = {
-  background: "#0F0F1A",
-  surface: "#1A1A2E",
-  surfaceLight: "#252B47",
-  surfaceBright: "#313854",
-  accentGradient: ["#FF6B9D", "#C944D2"],
+  background: "#070709",
+  surface: "#14141F",
+  surfaceLight: "#201F35",
+  surfaceBright: "#2F2B47",
+  accentGradient: ["#FF6B9D", "#C939E0"],
   accentGradient2: ["#FFD26F", "#FF6B6B"],
   textPrimary: "#FFFFFF",
-  textSecondary: "#B0B8C8",
-  textTertiary: "#6B7280",
+  textSecondary: "#C5B0E0",
+  textTertiary: "#8B7BA8",
   success: "#34D399",
-  successGlow: "rgba(52, 211, 153, 0.2)",
   warning: "#FBBF24",
-  warningGlow: "rgba(251, 191, 36, 0.2)",
   error: "#F87171",
-  errorGlow: "rgba(248, 113, 113, 0.2)",
   info: "#60A5FA",
-  infoGlow: "rgba(96, 165, 250, 0.2)",
+  successGlow: "rgba(52, 211, 153, 0.25)",
+  warningGlow: "rgba(251, 191, 36, 0.25)",
+  errorGlow: "rgba(248, 113, 113, 0.25)",
+  infoGlow: "rgba(96, 165, 250, 0.25)",
 };
 
-// ─── THEME 3: MIDNIGHT COSMIC (Modern) ───────────────────────────────
+// ─── PREMIUM COSMIC ───────────────────────────────────────────────────
 const THEME_COSMIC: ThemeType = {
-  background: "#0C0015",
-  surface: "#1A0A2E",
-  surfaceLight: "#2A1F4E",
-  surfaceBright: "#4A3F6F",
-  accentGradient: ["#00F5FF", "#00A8E8"],
+  background: "#050515",
+  surface: "#12061F",
+  surfaceLight: "#1F1540",
+  surfaceBright: "#3D2B5C",
+  accentGradient: ["#00F5FF", "#0099FF"],
   accentGradient2: ["#FF006E", "#FB5607"],
-  textPrimary: "#F5F5FF",
-  textSecondary: "#C4B0FF",
-  textTertiary: "#7B68B0",
+  textPrimary: "#F5F7FF",
+  textSecondary: "#D0B0FF",
+  textTertiary: "#9B7BB5",
   success: "#00FF88",
-  successGlow: "rgba(0, 255, 136, 0.2)",
   warning: "#FFB500",
-  warningGlow: "rgba(255, 181, 0, 0.2)",
   error: "#FF4757",
-  errorGlow: "rgba(255, 71, 87, 0.2)",
   info: "#00D4FF",
-  infoGlow: "rgba(0, 212, 255, 0.2)",
+  successGlow: "rgba(0, 255, 136, 0.25)",
+  warningGlow: "rgba(255, 181, 0, 0.25)",
+  errorGlow: "rgba(255, 71, 87, 0.25)",
+  infoGlow: "rgba(0, 212, 255, 0.25)",
 };
 
-// ─── CHOOSE THEME HERE ────────────────────────────────────────────────
-const THEME: ThemeType = THEME_AURORA;
+const THEME = THEME_AURORA;
 
-// ─── STAT CARD COMPONENT ──────────────────────────────────────────────
-interface StatCardProps {
+// ─── ANIMATED STAT CARD ───────────────────────────────────────────────
+interface AnimatedStatCardProps {
   icon: string;
   value: number;
   label: string;
   gradientColors: [string, string] | [string, string, string];
   textColor: string;
   theme: ThemeType;
+  delay: number;
 }
 
-function StatCard({
+function AnimatedStatCard({
   icon,
   value,
   label,
   gradientColors,
   textColor,
   theme,
-}: StatCardProps) {
+  delay,
+}: AnimatedStatCardProps) {
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 40,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [scaleAnim, opacityAnim, delay]);
+
   const colors = Array.isArray(gradientColors)
     ? (gradientColors as ColorValue[])
     : (gradientColors as ColorValue[]);
 
   return (
-    <LinearGradient colors={colors} style={statStyles.card}>
-      <BlurView intensity={40} tint="dark" style={statStyles.blur}>
-        <Text style={statStyles.icon}>{icon}</Text>
-        <Text style={[statStyles.value, { color: textColor }]}>{value}</Text>
-        <Text style={[statStyles.label, { color: theme.textTertiary }]}>
-          {label}
-        </Text>
-      </BlurView>
-    </LinearGradient>
+    <Animated.View
+      style={[
+        {
+          transform: [{ scale: scaleAnim }],
+          opacity: opacityAnim,
+        },
+      ]}
+    >
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={statStyles.card}
+      >
+        <BlurView intensity={50} tint="dark" style={statStyles.blur}>
+          {/* Shimmer effect overlay */}
+          <View
+            style={[
+              statStyles.shimmer,
+              {
+                backgroundColor: `${textColor}10`,
+              },
+            ]}
+          />
+          <Text style={statStyles.icon}>{icon}</Text>
+          <Text style={[statStyles.value, { color: textColor }]}>{value}</Text>
+          <Text style={[statStyles.label, { color: theme.textTertiary }]}>
+            {label}
+          </Text>
+        </BlurView>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
-// ─── TASK INPUT DARK COMPONENT ────────────────────────────────────────
-interface TaskInputDarkProps {
+// ─── ENHANCED TASK INPUT ──────────────────────────────────────────────
+interface TaskInputPremiumProps {
   onAdd: (
     title: string,
     description?: string,
@@ -155,234 +200,12 @@ interface TaskInputDarkProps {
   theme: ThemeType;
 }
 
-function TaskInputDark({ onAdd, theme }: TaskInputDarkProps) {
-  const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [dueDate, setDueDate] = React.useState<Date | null>(null);
-  const [showPicker, setShowPicker] = React.useState(false);
-  const [pickerMode, setPickerMode] = React.useState<"date" | "time">("date");
-  const [isFocused, setIsFocused] = React.useState(false);
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
-
-  const handleAdd = () => {
-    if (!title.trim()) {
-      if (description.trim() || dueDate) {
-        Toast.show({
-          msg: "Add a title to create a task",
-          bgColor: theme.error,
-        });
-      }
-      return;
-    }
-    onAdd(title.trim(), description.trim() || undefined, dueDate);
-    setTitle("");
-    setDescription("");
-    setDueDate(null);
-    setIsFocused(false);
-  };
-
-  const handleFocus = () => {
-    setIsFocused(true);
-    Animated.spring(scaleAnim, {
-      toValue: 1.02,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleBlur = () => {
-    if (!title.trim()) {
-      setIsFocused(false);
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-      }).start();
-    }
-  };
-
-  const handlePickerChange = (event: DateTimePickerEvent, date?: Date) => {
-    if (event.type === "dismissed") {
-      setShowPicker(false);
-      return;
-    }
-
-    if (pickerMode === "date" && date) {
-      const merged = dueDate ? new Date(dueDate) : new Date(date);
-      merged.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-      setDueDate(merged);
-
-      if (Platform.OS === "android") {
-        setShowPicker(false);
-        setTimeout(() => {
-          setPickerMode("time");
-          setShowPicker(true);
-        }, 300);
-      } else {
-        setPickerMode("time");
-      }
-    } else if (pickerMode === "time" && date) {
-      const merged = dueDate ? new Date(dueDate) : new Date();
-      merged.setHours(date.getHours(), date.getMinutes());
-      setDueDate(merged);
-      setShowPicker(false);
-    }
-  };
-
-  const hasContent = title.trim().length > 0;
-
-  const accentGradientColors: [ColorValue, ColorValue] = [
-    theme.accentGradient[0] as ColorValue,
-    theme.accentGradient[1] as ColorValue,
-  ];
-
-  const surfaceGradientColors: [ColorValue, ColorValue] = [
-    theme.surfaceBright as ColorValue,
-    theme.surface as ColorValue,
-  ];
-
-  return (
-    <Animated.View style={[{ transform: [{ scale: scaleAnim }] }]}>
-      <LinearGradient
-        colors={surfaceGradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={inputStyles.card}
-      >
-        <BlurView intensity={50} tint="dark" style={inputStyles.blur}>
-          <LinearGradient
-            colors={accentGradientColors}
-            style={inputStyles.accentBar}
-          />
-
-          <View style={inputStyles.titleRow}>
-            <View
-              style={[
-                inputStyles.leadIcon,
-                hasContent && inputStyles.leadIconActive,
-              ]}
-            >
-              {hasContent ? (
-                <LinearGradient
-                  colors={accentGradientColors}
-                  style={inputStyles.iconGradient}
-                >
-                  <Text style={inputStyles.leadIconTextActive}>✓</Text>
-                </LinearGradient>
-              ) : (
-                <Text style={inputStyles.leadIconText}>+</Text>
-              )}
-            </View>
-
-            <TextInput
-              placeholder="What needs to be done?"
-              placeholderTextColor={theme.textTertiary}
-              value={title}
-              onChangeText={setTitle}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              style={[inputStyles.titleInput, { color: theme.textPrimary }]}
-              returnKeyType="next"
-            />
-          </View>
-
-          {(isFocused || description) && (
-            <View
-              style={[
-                inputStyles.descriptionContainer,
-                { backgroundColor: theme.surfaceBright + "40" },
-              ]}
-            >
-              <TextInput
-                placeholder="Add details or notes…"
-                placeholderTextColor={theme.textTertiary}
-                value={description}
-                onChangeText={setDescription}
-                style={[inputStyles.descInput, { color: theme.textSecondary }]}
-                multiline
-                numberOfLines={2}
-                returnKeyType="done"
-                onSubmitEditing={handleAdd}
-              />
-            </View>
-          )}
-
-          <View
-            style={[
-              inputStyles.separator,
-              { backgroundColor: theme.surfaceBright },
-            ]}
-          />
-
-          <View style={inputStyles.actionRow}>
-            <Pressable
-              onPress={() => setShowPicker(true)}
-              style={({ pressed }) => [
-                inputStyles.dateChip,
-                { backgroundColor: theme.surfaceBright + "60" },
-                dueDate && { backgroundColor: theme.infoGlow },
-                pressed && inputStyles.chipPressed,
-              ]}
-            >
-              <Text style={inputStyles.dateChipEmoji}>
-                {dueDate ? "📅" : "🕐"}
-              </Text>
-              <Text
-                style={[
-                  inputStyles.dateChipText,
-                  { color: theme.textSecondary },
-                  dueDate && { color: theme.info },
-                ]}
-              >
-                {dueDate
-                  ? dueDate.toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "Set due date"}
-              </Text>
-            </Pressable>
-
-            <View style={{ flex: 1 }} />
-
-            <Pressable
-              onPress={handleAdd}
-              style={({ pressed }) => [
-                inputStyles.addFab,
-                pressed && inputStyles.addFabPressed,
-              ]}
-            >
-              <LinearGradient
-                colors={
-                  hasContent
-                    ? (accentGradientColors as ColorValue[])
-                    : (surfaceGradientColors as ColorValue[])
-                }
-                style={inputStyles.fabGradient}
-              >
-                <Text style={inputStyles.addFabText}>+</Text>
-              </LinearGradient>
-            </Pressable>
-          </View>
-
-          {showPicker && (
-            <DateTimePicker
-              value={dueDate || new Date()}
-              mode={pickerMode}
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              minimumDate={new Date()}
-              onChange={handlePickerChange}
-            />
-          )}
-        </BlurView>
-      </LinearGradient>
-    </Animated.View>
-  );
-}
-
 // ─── MAIN HOME COMPONENT ──────────────────────────────────────────────
 export default function Home() {
   const router = useRouter();
   const scrollOffsetY = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
 
   const {
     tasks,
@@ -395,12 +218,20 @@ export default function Home() {
   } = useTasks();
 
   React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim]);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        friction: 8,
+        tension: 40,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim]);
 
   const handleAddTask = useCallback(
     async (title: string, description?: string, dueDate?: Date | null) => {
@@ -481,8 +312,8 @@ export default function Home() {
 
   const progress = totalTasks > 0 ? doneTasks / totalTasks : 0;
 
-  const meshGradientColors: [ColorValue, ColorValue, ColorValue] = [
-    (THEME.accentGradient[0] + "15") as ColorValue,
+  const meshGradient: [ColorValue, ColorValue, ColorValue] = [
+    (THEME.accentGradient[0] + "20") as ColorValue,
     (THEME.accentGradient[1] + "08") as ColorValue,
     THEME.background as ColorValue,
   ];
@@ -493,12 +324,12 @@ export default function Home() {
   ];
 
   const headerGradient: [ColorValue, ColorValue] = [
-    (THEME.surfaceLight + "40") as ColorValue,
+    (THEME.surfaceLight + "50") as ColorValue,
     (THEME.background + "20") as ColorValue,
   ];
 
   const footerGradient: [ColorValue, ColorValue] = [
-    (THEME.surfaceLight + "20") as ColorValue,
+    (THEME.surfaceLight + "30") as ColorValue,
     (THEME.background + "00") as ColorValue,
   ];
 
@@ -507,8 +338,9 @@ export default function Home() {
       style={[styles.safeArea, { backgroundColor: THEME.background }]}
       edges={["top", "left", "right"]}
     >
+      {/* Animated mesh gradient */}
       <LinearGradient
-        colors={meshGradientColors}
+        colors={meshGradient}
         locations={[0, 0.4, 1]}
         style={styles.meshGradient}
         start={{ x: 0.8, y: 0 }}
@@ -516,8 +348,31 @@ export default function Home() {
         pointerEvents="none"
       />
 
-      <View style={[styles.glowElement, styles.glowTop]} />
-      <View style={[styles.glowElement, styles.glowBottom]} />
+      {/* Premium glow elements */}
+      <Animated.View
+        style={[
+          styles.glowElement,
+          styles.glowTop,
+          {
+            opacity: fadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.2],
+            }),
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.glowElement,
+          styles.glowBottom,
+          {
+            opacity: fadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.15],
+            }),
+          },
+        ]}
+      />
 
       <Animated.FlatList
         scrollEventThrottle={16}
@@ -535,14 +390,24 @@ export default function Home() {
         ]}
         ListHeaderComponent={
           <Animated.View
-            style={[styles.headerContainer, { opacity: fadeAnim }]}
+            style={[
+              styles.headerContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
           >
+            {/* Header gradient background */}
             <LinearGradient
               colors={headerGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.headerGradientBg}
             />
+
+            {/* Header top shimmer */}
+            <View style={styles.headerShimmer} />
 
             <View style={styles.header}>
               <View style={styles.headerLeft}>
@@ -569,62 +434,72 @@ export default function Home() {
                   end={{ x: 1, y: 1 }}
                   style={styles.avatarGradient}
                 >
+                  <View style={styles.avatarShimmer} />
                   <Text style={styles.avatarInitial}>A</Text>
                 </LinearGradient>
               </Pressable>
             </View>
 
+            {/* Stats with staggered animations */}
             <View style={styles.statsRow}>
-              <StatCard
+              <AnimatedStatCard
                 icon="📋"
                 value={totalTasks}
                 label="Total"
                 gradientColors={[THEME.surfaceLight, THEME.surfaceBright]}
                 textColor={THEME.textPrimary}
                 theme={THEME}
+                delay={0}
               />
-              <StatCard
+              <AnimatedStatCard
                 icon="✓"
                 value={doneTasks}
                 label="Done"
                 gradientColors={[
-                  (THEME.success + "20") as string,
-                  (THEME.success + "05") as string,
+                  (THEME.success + "30") as string,
+                  (THEME.success + "10") as string,
                 ]}
                 textColor={THEME.success}
                 theme={THEME}
+                delay={100}
               />
-              <StatCard
+              <AnimatedStatCard
                 icon="🔔"
                 value={todayTasks}
                 label="Today"
                 gradientColors={[
-                  (THEME.warning + "20") as string,
-                  (THEME.warning + "05") as string,
+                  (THEME.warning + "30") as string,
+                  (THEME.warning + "10") as string,
                 ]}
                 textColor={THEME.warning}
                 theme={THEME}
+                delay={200}
               />
               {overdueTasks > 0 && (
-                <StatCard
+                <AnimatedStatCard
                   icon="⚠️"
                   value={overdueTasks}
                   label="Overdue"
                   gradientColors={[
-                    (THEME.error + "20") as string,
-                    (THEME.error + "05") as string,
+                    (THEME.error + "30") as string,
+                    (THEME.error + "10") as string,
                   ]}
                   textColor={THEME.error}
                   theme={THEME}
+                  delay={300}
                 />
               )}
             </View>
 
+            {/* Premium progress section */}
             {totalTasks > 0 && (
-              <View
+              <Animated.View
                 style={[
                   styles.progressSection,
-                  { backgroundColor: THEME.surfaceLight + "40" },
+                  {
+                    backgroundColor: THEME.surfaceLight + "40",
+                    opacity: fadeAnim,
+                  },
                 ]}
               >
                 <View style={styles.progressHeader}>
@@ -642,50 +517,75 @@ export default function Home() {
                     {Math.round(progress * 100)}%
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.progressTrack,
-                    { backgroundColor: THEME.surfaceBright },
-                  ]}
-                >
-                  <LinearGradient
-                    colors={avatarGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
+
+                {/* Enhanced progress bar with glow */}
+                <View style={styles.progressTrackWrapper}>
+                  <View
                     style={[
-                      styles.progressFill,
-                      { width: `${progress * 100}%` as any },
+                      styles.progressTrack,
+                      { backgroundColor: THEME.surfaceBright },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={avatarGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.progressFill,
+                        { width: `${progress * 100}%` as any },
+                      ]}
+                    />
+                  </View>
+                  {/* Progress glow */}
+                  <View
+                    style={[
+                      styles.progressGlow,
+                      {
+                        width: `${progress * 100}%` as any,
+                        backgroundColor: THEME.success + "20",
+                      },
                     ]}
                   />
                 </View>
+
                 <Text
                   style={[styles.progressLabel, { color: THEME.textTertiary }]}
                 >
                   {doneTasks} of {totalTasks} completed
                 </Text>
-              </View>
+              </Animated.View>
             )}
 
-            <TaskInputDark onAdd={handleAddTask} theme={THEME} />
+            {/* Task input */}
+            <TaskInputUltimatePremium onAdd={handleAddTask} theme={THEME} />
 
+            {/* Section divider with premium styling */}
             {tasks.length > 0 && (
               <View style={styles.sectionDivider}>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: THEME.surfaceBright },
+                <LinearGradient
+                  colors={[
+                    (THEME.surfaceBright + "00") as ColorValue,
+                    THEME.surfaceBright as ColorValue,
+                    (THEME.surfaceBright + "00") as ColorValue,
                   ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.dividerLine}
                 />
                 <Text
                   style={[styles.sectionLabel, { color: THEME.textTertiary }]}
                 >
                   Your Tasks
                 </Text>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: THEME.surfaceBright },
+                <LinearGradient
+                  colors={[
+                    (THEME.surfaceBright + "00") as ColorValue,
+                    THEME.surfaceBright as ColorValue,
+                    (THEME.surfaceBright + "00") as ColorValue,
                   ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.dividerLine}
                 />
               </View>
             )}
@@ -696,7 +596,8 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
       />
 
-      <View style={[styles.footer, { backgroundColor: THEME.surface + "40" }]}>
+      {/* Premium footer */}
+      <View style={[styles.footer, { backgroundColor: THEME.surface + "50" }]}>
         <LinearGradient
           colors={footerGradient}
           start={{ x: 0, y: 1 }}
@@ -715,81 +616,101 @@ export default function Home() {
 
 // ─── STYLES ───────────────────────────────────────────────────────────
 const inputStyles = StyleSheet.create({
-  card: {
-    marginBottom: 24,
+  wrapper: {
+    marginBottom: 28,
     marginHorizontal: 2,
+  },
+  glowBackdrop: {
+    position: "absolute",
+    top: -40,
+    left: -20,
+    right: -20,
+    height: 360,
     borderRadius: 20,
+    backgroundColor: THEME.accentGradient[0],
+    zIndex: -1,
+  },
+  card: {
+    borderRadius: 24,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 10,
   },
   blur: {
-    borderRadius: 20,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
   },
   accentBar: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 3,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    height: 4,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  shimmerTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingTop: 14,
+    gap: 14,
+    marginBottom: 10,
   },
   leadIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.1)",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2.5,
+    borderColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   leadIconActive: {
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: "rgba(255,255,255,0.4)",
   },
   iconGradient: {
     width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
+    borderRadius: 14,
   },
   leadIconText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
-    color: "rgba(255,255,255,0.4)",
+    color: "rgba(255,255,255,0.35)",
   },
   leadIconTextActive: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     color: "#FFF",
   },
   titleInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
-    paddingVertical: 4,
-    letterSpacing: -0.3,
+    paddingVertical: 6,
+    letterSpacing: -0.4,
   },
   descriptionContainer: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
+    marginHorizontal: 0,
+    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
   },
   descInput: {
     fontSize: 14,
@@ -799,46 +720,62 @@ const inputStyles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    marginVertical: 12,
-    marginHorizontal: 16,
+    marginVertical: 14,
+    marginHorizontal: 0,
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    gap: 10,
   },
   dateChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 22,
+    gap: 7,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.12)",
   },
   dateChipEmoji: {
-    fontSize: 14,
+    fontSize: 15,
   },
   dateChipText: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
+  },
+  clearBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(239,68,68,0.1)",
+  },
+  clearBtnPressed: {
+    backgroundColor: "rgba(239,68,68,0.2)",
+    transform: [{ scale: 0.92 }],
+  },
+  clearBtnText: {
+    fontSize: 16,
+    color: "#EF4444",
+    fontWeight: "700",
   },
   chipPressed: {
-    opacity: 0.7,
+    opacity: 0.75,
+    transform: [{ scale: 0.96 }],
   },
   addFab: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   fabGradient: {
     width: "100%",
@@ -846,51 +783,67 @@ const inputStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  fabGlow: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    borderRadius: 20,
+    zIndex: 0,
+  },
   addFabPressed: {
-    opacity: 0.8,
+    transform: [{ scale: 0.88 }],
   },
   addFabText: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "400",
+    zIndex: 1,
   },
 });
 
 const statStyles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: "hidden",
-    minHeight: 100,
+    minHeight: 110,
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.12)",
   },
   blur: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    gap: 4,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    gap: 6,
+  },
+  shimmer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    zIndex: 1,
   },
   icon: {
-    fontSize: 24,
+    fontSize: 28,
   },
   value: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 26,
+    fontWeight: "800",
     letterSpacing: -0.8,
   },
   label: {
-    fontSize: 10,
-    fontWeight: "500",
+    fontSize: 11,
+    fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
 });
 
@@ -903,27 +856,26 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 400,
+    height: 450,
     zIndex: 0,
   },
   glowElement: {
     position: "absolute",
     borderRadius: 9999,
-    opacity: 0.15,
     zIndex: 0,
   },
   glowTop: {
-    width: 400,
-    height: 400,
-    top: -150,
-    right: -100,
+    width: 500,
+    height: 500,
+    top: -200,
+    right: -150,
     backgroundColor: THEME.accentGradient[0],
   },
   glowBottom: {
-    width: 300,
-    height: 300,
-    bottom: -100,
-    left: -50,
+    width: 400,
+    height: 400,
+    bottom: -150,
+    left: -100,
     backgroundColor: THEME.accentGradient[1],
   },
   listContent: {
@@ -936,161 +888,192 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     zIndex: 1,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   headerGradientBg: {
     position: "absolute",
     top: 0,
     left: -16,
     right: -16,
-    height: 200,
+    height: 240,
     zIndex: -1,
+  },
+  headerShimmer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 24,
-    marginTop: 6,
+    marginBottom: 28,
+    marginTop: 8,
   },
   headerLeft: {
-    gap: 4,
+    gap: 6,
   },
   greeting: {
     fontSize: 12,
-    fontWeight: "500",
-    letterSpacing: 0.3,
+    fontWeight: "600",
+    letterSpacing: 0.4,
     textTransform: "uppercase",
   },
   headerTitle: {
-    fontSize: 36,
-    fontWeight: "800",
-    letterSpacing: -1.2,
+    fontSize: 40,
+    fontWeight: "900",
+    letterSpacing: -1.5,
   },
   avatarBtn: {
-    borderRadius: 24,
+    borderRadius: 28,
     shadowColor: "#000",
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   avatarBtnPressed: {
-    transform: [{ scale: 0.92 }],
-    shadowOpacity: 0.2,
+    transform: [{ scale: 0.88 }],
+    shadowOpacity: 0.25,
   },
   avatarGradient: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  avatarShimmer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.4)",
   },
   avatarInitial: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
     color: "#fff",
+    zIndex: 1,
   },
   statsRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 18,
+    gap: 12,
+    marginBottom: 22,
   },
   progressSection: {
-    marginBottom: 18,
-    borderRadius: 16,
-    padding: 16,
+    marginBottom: 22,
+    borderRadius: 18,
+    padding: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.12)",
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   progressTitle: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
   progressPercent: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  progressTrackWrapper: {
+    position: "relative",
+    marginBottom: 10,
   },
   progressTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     overflow: "hidden",
-    marginBottom: 8,
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
   },
   progressFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 4,
+  },
+  progressGlow: {
+    position: "absolute",
+    height: 8,
+    borderRadius: 4,
+    top: 0,
+    left: 0,
   },
   progressLabel: {
-    fontSize: 11,
-    fontWeight: "500",
-    letterSpacing: 0.2,
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
   sectionDivider: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginVertical: 16,
-    marginHorizontal: -2,
+    gap: 12,
+    marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
-    height: 1,
+    height: 1.5,
   },
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
   },
   emptyContainer: {
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 40,
+    gap: 16,
+    paddingVertical: 50,
   },
   emptyIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: 10,
     shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   emptyIcon: {
-    fontSize: 32,
+    fontSize: 36,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: -0.5,
+    fontSize: 22,
+    fontWeight: "800",
+    letterSpacing: -0.6,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "400",
     textAlign: "center",
-    maxWidth: 260,
+    maxWidth: 280,
   },
   footer: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.05)",
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
   footerGradient: {
     position: "absolute",
@@ -1101,8 +1084,8 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   footerText: {
-    fontSize: 10,
-    fontWeight: "400",
-    letterSpacing: 0.3,
+    fontSize: 11,
+    fontWeight: "500",
+    letterSpacing: 0.4,
   },
 });
