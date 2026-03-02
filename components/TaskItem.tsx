@@ -10,7 +10,6 @@ import {
   View,
 } from "react-native";
 
-// ─── TYPE DEFINITIONS ─────────────────────────────────────────────────
 type ThemeType = {
   background: string;
   surface: string;
@@ -29,9 +28,12 @@ type ThemeType = {
   warningGlow: string;
   errorGlow: string;
   infoGlow: string;
+  gold: string;
+  goldLight: string;
+  goldDark: string;
 };
 
-interface TaskItemPremiumProps {
+interface TaskItemProps {
   title: string;
   description?: string | null;
   dueDate?: string | null;
@@ -41,7 +43,7 @@ interface TaskItemPremiumProps {
   theme: ThemeType;
 }
 
-export default function TaskItemPremium({
+export default function TaskItemGoldenLuxury({
   title,
   description,
   dueDate,
@@ -49,14 +51,12 @@ export default function TaskItemPremium({
   onToggle,
   onDelete,
   theme,
-}: TaskItemPremiumProps) {
+}: TaskItemProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const checkAnim = useRef(new Animated.Value(0)).current;
   const shimmerAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
 
-  // Trigger animations on completion
   useEffect(() => {
     if (completed) {
       Animated.parallel([
@@ -70,12 +70,12 @@ export default function TaskItemPremium({
           Animated.sequence([
             Animated.timing(shimmerAnim, {
               toValue: 1,
-              duration: 1500,
+              duration: 2000,
               useNativeDriver: false,
             }),
             Animated.timing(shimmerAnim, {
               toValue: 0,
-              duration: 1500,
+              duration: 2000,
               useNativeDriver: false,
             }),
           ]),
@@ -151,7 +151,7 @@ export default function TaskItemPremium({
 
   const successGradient: [ColorValue, ColorValue] = [
     theme.success as ColorValue,
-    "#059669" as ColorValue,
+    "#5FA23F" as ColorValue,
   ];
 
   const surfaceGradient: [ColorValue, ColorValue] = [
@@ -175,32 +175,7 @@ export default function TaskItemPremium({
         end={{ x: 1, y: 1 }}
         style={styles.linearGradient}
       >
-        <BlurView intensity={60} tint="dark" style={styles.blurContainer}>
-          {/* Premium accent bar with glow */}
-          <View
-            style={[
-              styles.accentBar,
-              {
-                backgroundColor: accentBarColor,
-              },
-            ]}
-          />
-
-          {/* Accent glow effect */}
-          <Animated.View
-            style={[
-              styles.accentGlow,
-              {
-                backgroundColor: accentGlow,
-                opacity: glowAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.3, 0.8],
-                }),
-              },
-            ]}
-          />
-
-          {/* Shimmer effect on completion */}
+        <BlurView intensity={65} tint="dark" style={styles.blurContainer}>
           {completed && (
             <Animated.View
               style={[
@@ -208,15 +183,21 @@ export default function TaskItemPremium({
                 {
                   opacity: shimmerAnim.interpolate({
                     inputRange: [0, 0.5, 1],
-                    outputRange: [0, 0.4, 0],
+                    outputRange: [0, 0.3, 0],
                   }),
                 },
               ]}
             />
           )}
 
+          <View
+            style={[styles.accentBar, { backgroundColor: accentBarColor }]}
+          />
+          <Animated.View
+            style={[styles.accentGlow, { backgroundColor: accentGlow }]}
+          />
+
           <View style={styles.innerRow}>
-            {/* Enhanced checkbox with glow */}
             <Pressable
               onPress={onToggle}
               hitSlop={14}
@@ -231,9 +212,7 @@ export default function TaskItemPremium({
                   colors={successGradient}
                   style={styles.checkmarkGradient}
                 >
-                  {/* Checkmark glow */}
                   <View style={styles.checkGlow} />
-
                   <Animated.Text
                     style={[
                       styles.checkmarkText,
@@ -255,7 +234,6 @@ export default function TaskItemPremium({
               )}
             </Pressable>
 
-            {/* Text content */}
             <View style={styles.textBlock}>
               <Text
                 numberOfLines={2}
@@ -281,23 +259,22 @@ export default function TaskItemPremium({
                 </Text>
               )}
 
-              {/* Enhanced date chip */}
               {!!dueDate && (
                 <LinearGradient
                   colors={
                     isOverdue
                       ? [
                           (theme.error + "25") as string,
-                          (theme.error + "10") as string,
+                          (theme.error + "08") as string,
                         ]
                       : isToday
                         ? [
                             (theme.warning + "25") as string,
-                            (theme.warning + "10") as string,
+                            (theme.warning + "08") as string,
                           ]
                         : [
                             (theme.info + "25") as string,
-                            (theme.info + "10") as string,
+                            (theme.info + "08") as string,
                           ]
                   }
                   start={{ x: 0, y: 0 }}
@@ -334,7 +311,6 @@ export default function TaskItemPremium({
               )}
             </View>
 
-            {/* Delete button with glow */}
             <Pressable
               onPress={handleDelete}
               hitSlop={16}
@@ -362,41 +338,44 @@ export default function TaskItemPremium({
   );
 }
 
-// ─── STYLES ───────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   cardWrapper: {
     marginBottom: 14,
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
+    shadowColor: "#FFD700",
+    shadowOpacity: 0.3,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
     marginHorizontal: 2,
   },
-
   linearGradient: {
     borderRadius: 20,
     overflow: "hidden",
+    borderColor: "rgba(255,215,0,0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
   },
-
   blurContainer: {
     borderRadius: 20,
     overflow: "hidden",
   },
-
+  shimmerEffect: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "100%",
+    backgroundColor: "rgba(255,215,0,0.15)",
+  },
   accentBar: {
     position: "absolute",
     left: 0,
     top: 0,
     bottom: 0,
-    width: 3.5,
+    width: 4,
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
   },
-
   accentGlow: {
     position: "absolute",
     left: 0,
@@ -405,17 +384,8 @@ const styles = StyleSheet.create({
     width: 24,
     borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
+    opacity: 0.4,
   },
-
-  shimmerEffect: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "100%",
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-
   innerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -423,8 +393,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 14,
   },
-
-  // ─── Checkbox ──────────────────────────────────────
   checkbox: {
     width: 32,
     height: 32,
@@ -436,20 +404,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-
   checkboxCompleted: {
     borderColor: "rgba(255,255,255,0.3)",
-    shadowColor: "#10B981",
+    shadowColor: "#76D749",
     shadowOpacity: 0.5,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-
   checkboxPressed: {
     transform: [{ scale: 0.84 }],
   },
-
   checkmarkGradient: {
     width: "100%",
     height: "100%",
@@ -457,7 +422,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   checkGlow: {
     position: "absolute",
     width: "120%",
@@ -465,7 +429,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.3)",
   },
-
   checkmarkText: {
     color: "#fff",
     fontSize: 16,
@@ -473,38 +436,30 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     zIndex: 1,
   },
-
-  // ─── Text block ────────────────────────────────────
   textBlock: {
     flex: 1,
     gap: 6,
   },
-
   title: {
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: -0.3,
     lineHeight: 22,
   },
-
   titleCompleted: {
     textDecorationLine: "line-through",
     opacity: 0.45,
     fontWeight: "400",
   },
-
   description: {
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "400",
   },
-
   textCompleted: {
     textDecorationLine: "line-through",
     opacity: 0.35,
   },
-
-  // ─── Date chip ─────────────────────────────────────
   dateChip: {
     alignSelf: "flex-start",
     borderRadius: 12,
@@ -516,18 +471,14 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1.5,
   },
-
   dateChipEmoji: {
     fontSize: 13,
   },
-
   dateChipText: {
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.1,
   },
-
-  // ─── Delete button ─────────────────────────────────
   deleteBtn: {
     width: 36,
     height: 36,
@@ -540,7 +491,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-
   deleteBtnGradient: {
     width: "100%",
     height: "100%",
@@ -548,11 +498,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   deleteBtnPressed: {
     transform: [{ scale: 0.88 }],
   },
-
   deleteIcon: {
     fontSize: 16,
     fontWeight: "700",

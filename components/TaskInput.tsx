@@ -1,3 +1,4 @@
+import Toast from "@/components/Toast";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -15,9 +16,6 @@ import {
   View,
 } from "react-native";
 
-import Toast from "@/components/Toast";
-
-// ─── TYPE DEFINITIONS ─────────────────────────────────────────────────
 type ThemeType = {
   background: string;
   surface: string;
@@ -36,9 +34,12 @@ type ThemeType = {
   warningGlow: string;
   errorGlow: string;
   infoGlow: string;
+  gold: string;
+  goldLight: string;
+  goldDark: string;
 };
 
-interface TaskInputPremiumProps {
+interface TaskInputProps {
   onAdd: (
     title: string,
     description?: string,
@@ -47,64 +48,44 @@ interface TaskInputPremiumProps {
   theme: ThemeType;
 }
 
-export default function TaskInputUltimatePremium({
+export default function TaskInputGoldenLuxury({
   onAdd,
   theme,
-}: TaskInputPremiumProps) {
+}: TaskInputProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [pickerMode, setPickerMode] = useState<"date" | "time">("date");
   const [isFocused, setIsFocused] = useState(false);
-  const [isActive, setIsActive] = useState(false);
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const focusAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
-  const buttonGlowAnim = useRef(new Animated.Value(0)).current;
 
   const handleFocus = () => {
     setIsFocused(true);
-    setIsActive(true);
-
     Animated.parallel([
       Animated.spring(scaleAnim, {
-        toValue: 1.04,
+        toValue: 1.06,
         useNativeDriver: true,
-        friction: 8,
-        tension: 40,
+        friction: 7,
       }),
       Animated.timing(focusAnim, {
         toValue: 1,
-        duration: 350,
+        duration: 400,
         useNativeDriver: true,
       }),
       Animated.loop(
         Animated.sequence([
           Animated.timing(glowAnim, {
             toValue: 1,
-            duration: 2500,
+            duration: 3500,
             useNativeDriver: false,
           }),
           Animated.timing(glowAnim, {
             toValue: 0,
-            duration: 2500,
-            useNativeDriver: false,
-          }),
-        ]),
-      ),
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(shimmerAnim, {
-            toValue: 1,
-            duration: 3000,
-            useNativeDriver: false,
-          }),
-          Animated.timing(shimmerAnim, {
-            toValue: 0,
-            duration: 3000,
+            duration: 3500,
             useNativeDriver: false,
           }),
         ]),
@@ -115,12 +96,10 @@ export default function TaskInputUltimatePremium({
   const handleBlur = () => {
     if (!title.trim()) {
       setIsFocused(false);
-      setIsActive(false);
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
           useNativeDriver: true,
-          friction: 8,
         }),
         Animated.timing(focusAnim, {
           toValue: 0,
@@ -133,10 +112,7 @@ export default function TaskInputUltimatePremium({
 
   const handleAdd = () => {
     if (!title.trim()) {
-      Toast.show({
-        msg: "Add a title to create a task",
-        bgColor: theme.error,
-      });
+      Toast.show({ msg: "Add a title", bgColor: theme.error });
       return;
     }
     onAdd(title.trim(), description.trim() || undefined, dueDate);
@@ -144,7 +120,6 @@ export default function TaskInputUltimatePremium({
     setDescription("");
     setDueDate(null);
     setIsFocused(false);
-    setIsActive(false);
   };
 
   const handlePickerChange = (event: DateTimePickerEvent, date?: Date) => {
@@ -152,12 +127,10 @@ export default function TaskInputUltimatePremium({
       setShowPicker(false);
       return;
     }
-
     if (pickerMode === "date" && date) {
       const merged = dueDate ? new Date(dueDate) : new Date(date);
       merged.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
       setDueDate(merged);
-
       if (Platform.OS === "android") {
         setShowPicker(false);
         setTimeout(() => {
@@ -176,35 +149,23 @@ export default function TaskInputUltimatePremium({
   };
 
   const hasContent = title.trim().length > 0;
-
   const accentGradient: [ColorValue, ColorValue] = [
     theme.accentGradient[0] as ColorValue,
     theme.accentGradient[1] as ColorValue,
   ];
 
-  const surfaceGradient: [ColorValue, ColorValue] = [
-    theme.surfaceLight as ColorValue,
-    theme.surface as ColorValue,
-  ];
-
   return (
     <Animated.View
-      style={[
-        styles.wrapper,
-        {
-          transform: [{ scale: scaleAnim }],
-        },
-      ]}
+      style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}
     >
-      {/* Premium glow backdrop */}
-      {/* {isActive && (
+      {/* {isFocused && (
         <Animated.View
           style={[
             styles.glowBackdrop,
             {
               opacity: glowAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0.2, 0.5],
+                outputRange: [0.1, 0.4],
               }),
             },
           ]}
@@ -212,48 +173,17 @@ export default function TaskInputUltimatePremium({
       )} */}
 
       <LinearGradient
-        colors={surfaceGradient}
+        colors={[theme.surfaceLight, theme.surface]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.card}
       >
         <BlurView intensity={70} tint="dark" style={styles.blur}>
-          {/* Premium gradient accent bar */}
-          <LinearGradient
-            colors={accentGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.accentBar}
-          />
-
-          {/* Top shimmer line */}
-          <View style={styles.shimmerLine} />
-
-          {/* Shimmer effect overlay */}
-          {isActive && (
-            <Animated.View
-              style={[
-                styles.shimmerOverlay,
-                {
-                  opacity: shimmerAnim.interpolate({
-                    inputRange: [0, 0.5, 1],
-                    outputRange: [0, 0.2, 0],
-                  }),
-                  transform: [
-                    {
-                      translateX: shimmerAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-400, 400],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-          )}
+          <LinearGradient colors={accentGradient} style={styles.goldenBar} />
+          <View style={styles.topLine} />
 
           <View style={styles.titleRow}>
-            <Animated.View
+            <View
               style={[styles.leadIcon, hasContent && styles.leadIconActive]}
             >
               {hasContent ? (
@@ -261,13 +191,12 @@ export default function TaskInputUltimatePremium({
                   colors={accentGradient}
                   style={styles.iconGradient}
                 >
-                  <View style={styles.iconGlow} />
-                  <Text style={styles.leadIconTextActive}>✓</Text>
+                  <Text style={styles.checkIcon}>✓</Text>
                 </LinearGradient>
               ) : (
-                <Text style={styles.leadIconText}>+</Text>
+                <Text style={styles.plusIcon}>+</Text>
               )}
-            </Animated.View>
+            </View>
 
             <TextInput
               placeholder="What needs to be done?"
@@ -284,31 +213,21 @@ export default function TaskInputUltimatePremium({
           {(isFocused || description) && (
             <Animated.View
               style={[
-                styles.descriptionContainer,
+                styles.descriptionBox,
                 {
-                  backgroundColor: theme.surfaceBright + "60",
+                  backgroundColor: theme.surfaceBright + "70",
                   opacity: focusAnim,
-                  transform: [
-                    {
-                      translateY: focusAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-10, 0],
-                      }),
-                    },
-                  ],
                 },
               ]}
             >
               <TextInput
-                placeholder="Add details or notes…"
+                placeholder="Add details…"
                 placeholderTextColor={theme.textTertiary}
                 value={description}
                 onChangeText={setDescription}
                 style={[styles.descInput, { color: theme.textSecondary }]}
                 multiline
                 numberOfLines={2}
-                returnKeyType="done"
-                onSubmitEditing={handleAdd}
               />
             </Animated.View>
           )}
@@ -316,7 +235,7 @@ export default function TaskInputUltimatePremium({
           <View
             style={[
               styles.separator,
-              { backgroundColor: theme.surfaceBright + "70" },
+              { backgroundColor: theme.surfaceBright + "80" },
             ]}
           />
 
@@ -324,25 +243,20 @@ export default function TaskInputUltimatePremium({
             <Pressable
               onPress={() => setShowPicker(true)}
               style={({ pressed }) => [
-                styles.dateChip,
+                styles.dateBtn,
                 {
                   backgroundColor: dueDate
                     ? theme.infoGlow
-                    : theme.surfaceBright + "50",
-                  borderColor: dueDate
-                    ? theme.info + "50"
-                    : "rgba(255,255,255,0.1)",
+                    : theme.surfaceBright + "60",
                 },
-                pressed && styles.chipPressed,
+                pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.dateChipEmoji}>{dueDate ? "📅" : "🕐"}</Text>
+              <Text style={styles.dateEmoji}>{dueDate ? "📅" : "🕐"}</Text>
               <Text
                 style={[
-                  styles.dateChipText,
-                  {
-                    color: dueDate ? theme.info : theme.textSecondary,
-                  },
+                  styles.dateText,
+                  { color: dueDate ? theme.gold : theme.textSecondary },
                 ]}
               >
                 {dueDate
@@ -350,7 +264,7 @@ export default function TaskInputUltimatePremium({
                       month: "short",
                       day: "numeric",
                     })
-                  : "Set due date"}
+                  : "Date"}
               </Text>
             </Pressable>
 
@@ -359,10 +273,10 @@ export default function TaskInputUltimatePremium({
                 onPress={() => setDueDate(null)}
                 style={({ pressed }) => [
                   styles.clearBtn,
-                  pressed && styles.clearBtnPressed,
+                  pressed && styles.pressed,
                 ]}
               >
-                <Text style={styles.clearBtnText}>✕</Text>
+                <Text style={styles.clearX}>✕</Text>
               </Pressable>
             )}
 
@@ -370,50 +284,16 @@ export default function TaskInputUltimatePremium({
 
             <Pressable
               onPress={handleAdd}
-              onPressIn={() => {
-                Animated.loop(
-                  Animated.sequence([
-                    Animated.timing(buttonGlowAnim, {
-                      toValue: 1,
-                      duration: 600,
-                      useNativeDriver: false,
-                    }),
-                    Animated.timing(buttonGlowAnim, {
-                      toValue: 0,
-                      duration: 600,
-                      useNativeDriver: false,
-                    }),
-                  ]),
-                ).start();
-              }}
               style={({ pressed }) => [
-                styles.addFab,
-                pressed && styles.addFabPressed,
+                styles.addBtn,
+                pressed && styles.pressed,
               ]}
             >
               <LinearGradient
-                colors={
-                  hasContent
-                    ? (accentGradient as ColorValue[])
-                    : (surfaceGradient as ColorValue[])
-                }
-                style={styles.fabGradient}
+                colors={accentGradient}
+                style={styles.addGradient}
               >
-                {/* Glow effect */}
-                {hasContent && (
-                  <Animated.View
-                    style={[
-                      styles.fabGlowPulse,
-                      {
-                        opacity: buttonGlowAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.3, 0.7],
-                        }),
-                      },
-                    ]}
-                  />
-                )}
-                <Text style={styles.addFabText}>+</Text>
+                <Text style={styles.addText}>+</Text>
               </LinearGradient>
             </Pressable>
           </View>
@@ -433,62 +313,51 @@ export default function TaskInputUltimatePremium({
   );
 }
 
-// ─── STYLES ───────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 28,
+    marginBottom: 32,
     marginHorizontal: 2,
   },
   glowBackdrop: {
     position: "absolute",
-    top: -50,
+    top: -60,
     left: -30,
     right: -30,
-    height: 380,
-    borderRadius: 24,
-    backgroundColor: "#00D4FF",
+    height: 400,
+    borderRadius: 28,
+    backgroundColor: "#FFD700",
     zIndex: -1,
   },
   card: {
-    borderRadius: 26,
+    borderRadius: 28,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.55,
-    shadowRadius: 32,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 12,
+    shadowColor: "#FFD700",
+    shadowOpacity: 0.6,
+    shadowRadius: 40,
+    shadowOffset: { width: 0, height: 16 },
+    elevation: 14,
   },
   blur: {
-    borderRadius: 26,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    borderRadius: 28,
   },
-  accentBar: {
+  goldenBar: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 4.5,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    height: 5,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
   },
-  shimmerLine: {
+  topLine: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  shimmerOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "100%",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    backgroundColor: "rgba(255,215,0,0.3)",
   },
   titleRow: {
     flexDirection: "row",
@@ -497,44 +366,34 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   leadIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(255,215,0,0.08)",
   },
   leadIconActive: {
-    borderColor: "rgba(255,255,255,0.45)",
+    borderColor: "rgba(255,215,0,0.6)",
   },
   iconGradient: {
     width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 16,
-  },
-  iconGlow: {
-    position: "absolute",
-    width: "140%",
-    height: "140%",
     borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.25)",
   },
-  leadIconText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.4)",
-    zIndex: 1,
-  },
-  leadIconTextActive: {
-    fontSize: 18,
+  checkIcon: {
+    fontSize: 20,
     fontWeight: "800",
     color: "#FFF",
-    zIndex: 1,
+  },
+  plusIcon: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.4)",
   },
   titleInput: {
     flex: 1,
@@ -543,99 +402,65 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     letterSpacing: -0.5,
   },
-  descriptionContainer: {
+  descriptionBox: {
     marginHorizontal: 0,
     marginBottom: 12,
     paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderRadius: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
   },
   descInput: {
     fontSize: 15,
     fontWeight: "400",
-    lineHeight: 22,
-    paddingVertical: 0,
+    lineHeight: 20,
   },
   separator: {
-    height: 1.5,
+    height: 2,
     marginVertical: 16,
-    marginHorizontal: 0,
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
+    gap: 10,
   },
-  dateChip: {
+  dateBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 24,
-    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
     borderWidth: 2,
+    borderColor: "rgba(255,215,0,0.3)",
   },
-  dateChipEmoji: {
-    fontSize: 16,
-  },
-  dateChipText: {
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.1,
-  },
-  chipPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.94 }],
-  },
+  dateEmoji: { fontSize: 15 },
+  dateText: { fontSize: 13, fontWeight: "700" },
   clearBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(239,68,68,0.15)",
+    backgroundColor: "rgba(255,82,82,0.15)",
   },
-  clearBtnPressed: {
-    backgroundColor: "rgba(239,68,68,0.25)",
-    transform: [{ scale: 0.88 }],
-  },
-  clearBtnText: {
-    fontSize: 18,
-    color: "#EF4444",
-    fontWeight: "800",
-  },
-  addFab: {
+  clearX: { fontSize: 16, color: "#FF5252", fontWeight: "800" },
+  addBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: "#FFD700",
     shadowOpacity: 0.5,
-    shadowRadius: 14,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
-  fabGradient: {
+  addGradient: {
     width: "100%",
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
-  fabGlowPulse: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.4)",
-    zIndex: 0,
-  },
-  addFabPressed: {
-    transform: [{ scale: 0.85 }],
-  },
-  addFabText: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "400",
-    zIndex: 1,
-  },
+  addText: { color: "#FFF", fontSize: 24, fontWeight: "400" },
+  pressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
 });
